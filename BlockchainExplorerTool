@@ -1,0 +1,70 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract BlockchainExplorerTool {
+    struct TransactionDetails {
+        address from;
+        address to;
+        uint256 value;
+        uint256 timestamp;
+        uint256 blockNumber;
+    }
+
+    struct BlockDetails {
+        uint256 blockNumber;
+        bytes32 blockHash;
+        address miner;
+        uint256 timestamp;
+        uint256 transactionCount;
+    }
+
+    struct AddressDetails {
+        address addr;
+        uint256 balance;
+        uint256 transactionCount;
+    }
+
+    mapping(bytes32 => TransactionDetails) public transactions;
+    mapping(uint256 => BlockDetails) public blocks;
+    mapping(address => AddressDetails) public addresses;
+
+    event TransactionRecorded(bytes32 indexed txHash, address indexed from, address indexed to, uint256 value, uint256 timestamp, uint256 blockNumber);
+    event BlockRecorded(uint256 indexed blockNumber, bytes32 indexed blockHash, address indexed miner, uint256 timestamp, uint256 transactionCount);
+
+    function recordTransaction(bytes32 txHash, address from, address to, uint256 value, uint256 blockNumber) external {
+        uint256 timestamp = block.timestamp;
+        transactions[txHash] = TransactionDetails(from, to, value, timestamp, blockNumber);
+
+        addresses[from].addr = from;
+        addresses[from].balance = from.balance;
+        addresses[from].transactionCount++;
+
+        addresses[to].addr = to;
+        addresses[to].balance = to.balance;
+        addresses[to].transactionCount++;
+
+        emit TransactionRecorded(txHash, from, to, value, timestamp, blockNumber);
+    }
+
+    function recordBlock(uint256 blockNumber, bytes32 blockHash, address miner, uint256 transactionCount) external {
+        uint256 timestamp = block.timestamp;
+        blocks[blockNumber] = BlockDetails(blockNumber, blockHash, miner, timestamp, transactionCount);
+
+        emit BlockRecorded(blockNumber, blockHash, miner, timestamp, transactionCount);
+    }
+
+    function getTransactionDetails(bytes32 txHash) external view returns (address from, address to, uint256 value, uint256 timestamp, uint256 blockNumber) {
+        TransactionDetails storage txDetail = transactions[txHash];
+        return (txDetail.from, txDetail.to, txDetail.value, txDetail.timestamp, txDetail.blockNumber);
+    }
+
+    function getBlockDetails(uint256 blockNumber) external view returns (bytes32 blockHash, address miner, uint256 timestamp, uint256 transactionCount) {
+        BlockDetails storage blockDetail = blocks[blockNumber];
+        return (blockDetail.blockHash, blockDetail.miner, blockDetail.timestamp, blockDetail.transactionCount);
+    }
+
+    function getAddressDetails(address addr) external view returns (uint256 balance, uint256 transactionCount) {
+        AddressDetails storage addrDetail = addresses[addr];
+        return (addrDetail.balance, addrDetail.transactionCount);
+    }
+}
